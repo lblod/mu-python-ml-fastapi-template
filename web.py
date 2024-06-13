@@ -2,14 +2,14 @@ import os
 from importlib import import_module
 import builtins
 
-import flask
+from fastapi import FastAPI
 from rdflib.namespace import Namespace
 
 import helpers
 from escape_helpers import sparql_escape
 
-# WSGI variable name used by the server
-app = flask.Flask(__name__)
+# ASGI variable name used by the server
+app = FastAPI()
 
 ##################
 ## Vocabularies ##
@@ -36,5 +36,6 @@ except Exception:
 ## Start Application ##
 #######################
 if __name__ == '__main__':
+    import uvicorn
     debug = os.environ.get('MODE') == "development"
-    app.run(debug=debug, host='0.0.0.0', port=80)
+    uvicorn.run(app, host='0.0.0.0', port=80, debug=debug)

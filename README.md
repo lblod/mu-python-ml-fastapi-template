@@ -1,20 +1,20 @@
 # Mu Python template
 
-Template for [mu.semte.ch](http://mu.semte.ch)-microservices written in Python3. Based on the [Flask](https://palletsprojects.com/p/flask/)-framework.
+Template for [mu.semte.ch](http://mu.semte.ch)-microservices written in Python3. Based on the [FastAPI](https://fastapi.tiangolo.com/)-framework.
 
 ## Quickstart
 
-Create a `Dockerfile` which extends the `semtech/mu-python-template`-image and set a maintainer.
+Create a `Dockerfile` which extends the `svercoutere/mu-python-ml`-image and set a maintainer.
 ```docker
-FROM semtech/mu-python-template:2.0.0-beta.2
-LABEL maintainer="sam.landuydt@gmail.com"
+FROM svercoutere/mu-python-ml:0.1.0
+LABEL maintainer="user_name@mail_provider.com"
 ```
 
 Create a `web.py` entrypoint-file. (naming of the entrypoint can be configured through `APP_ENTRYPOINT`)
 ```python
-@app.route("/hello")
-def hello():
-    return "Hello from the mu-python-template!"
+@app.get("/hello")
+async def hello():
+    return {"message": "Hello from mu-python-ml!"}
 ```
 
 Build the Docker-image for your service
@@ -36,7 +36,7 @@ curl localhost:8080/hello
 
 ### Dependencies
 
-If your service needs external libraries other than the ones already provided by the template (Flask, SPARQLWrapper and rdflib), you can specify those in a [`requirements.txt`](https://pip.pypa.io/en/stable/reference/requirements-file-format/)-file. The template will take care of installing them when you build your Docker image and when you boot the template in development mode for the first time.
+If your service needs external libraries other than the ones already provided by the template (FastAPI, SPARQLWrapper, rdflib, Numpy, Pandas, Scipy, PyTorch, Tensorflow, Transformers, HuggingFace ), you can specify those in a [`requirements.txt`](https://pip.pypa.io/en/stable/reference/requirements-file-format/)-file. The template will take care of installing them when you build your Docker image and when you boot the template in development mode for the first time.
 
 ### Development mode
 
@@ -135,7 +135,7 @@ def validate_resource_type(expected_type, data)
 #### `query`
 
 ```python
-def query(the_query)
+def query(the_query: str, request: Request)
 ```
 
 > Execute the given SPARQL query (select/ask/construct) on the triplestore and returns the results in the given return Format (JSON by default).
@@ -145,7 +145,7 @@ def query(the_query)
 #### `update`
 
 ```python
-def update(the_query)
+def update(the_query: str, request: Request)
 ```
 
 > Execute the given update SPARQL query on the triplestore. If the given query is not an update query, nothing happens.
@@ -155,7 +155,7 @@ def update(the_query)
 #### `update_modified`
 
 ```python
-def update_modified(subject, modified=datetime.datetime.now())
+def update_modified(subject, request: Request, modified=datetime.datetime.now()
 ```
 
 > (DEPRECATED) Executes a SPARQL query to update the modification date of the given subject URI (string).
@@ -327,7 +327,7 @@ For hosting the app in a production setting, the template depends on [meinheld-g
 ## Other
 
 ### Reassigning `app`
-In regular Flask applications (e.g. those not run within this template) you are required to define `app` by using `app = Flask(__name__)` or similar. This does *not* need to be done in your web.py, as this is handled by the microservice architecture/template. Redefining this may cause `The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.` to be thrown on your routes, which can be luckily be fixed by simply removing the previously mentioned `app = ...` line.
+In regular FastAPI applications (e.g. those not run within this template) you are required to define `app` by using `app = FastAPI(__name__)` or similar. This does *not* need to be done in your web.py, as this is handled by the microservice architecture/template. Redefining this may cause `The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.` to be thrown on your routes, which can be luckily be fixed by simply removing the previously mentioned `app = ...` line.
 
 ### readme.py
 To simplify documenting the helper functions, `README.py` can be used to import & render the docstrings into README.md.

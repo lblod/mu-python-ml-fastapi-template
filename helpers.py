@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 import sys
-from flask import jsonify, request
+from fastapi import Request, HTTPException
 from rdflib.namespace import DC
 from escape_helpers import sparql_escape
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -59,22 +59,18 @@ def log(msg, *args, **kwargs):
     """
     return logger.info(msg, *args, **kwargs)
 
-def error(msg, status=400, **kwargs):
-    """
-    Returns a Response object containing a JSONAPI compliant error response with the given status code (400 by default).
+from fastapi import HTTPException
 
-    Response object documentation: https://flask.palletsprojects.com/en/1.1.x/api/#response-objects
+def error(msg: str, status: int = 400, **kwargs):
+    """
+    Raises an HTTPException with the given status code (400 by default) and detail message.
+
     The kwargs can be any other key supported by JSONAPI error objects: https://jsonapi.org/format/#error-objects
     """
     error_obj = kwargs
     error_obj["detail"] = msg
     error_obj["status"] = status
-    response = jsonify({
-        "errors": [error_obj]
-    })
-    response.status_code = error_obj["status"]
-    response.headers["Content-Type"] = "application/vnd.api+json"
-    return response
+    raise HTTPException(status_code=status, detail={"errors": [error_obj]})
 
 
 
@@ -104,6 +100,7 @@ def validate_resource_type(expected_type, data):
 
 sparqlQuery = SPARQLWrapper(os.environ.get('MU_SPARQL_ENDPOINT'), returnFormat=JSON)
 sparqlUpdate = SPARQLWrapper(os.environ.get('MU_SPARQL_UPDATEPOINT'), returnFormat=JSON)
+
 sparqlUpdate.method = 'POST'
 if os.environ.get('MU_SPARQL_TIMEOUT'):
     timeout = int(os.environ.get('MU_SPARQL_TIMEOUT'))
@@ -117,7 +114,8 @@ MU_HEADERS = [
     "MU-AUTH-USED-GROUPS"
 ]
 
-def query(the_query):
+
+def query(the_query: str, request: Request):
     """Execute the given SPARQL query (select/ask/construct) on the triplestore and returns the results in the given return Format (JSON by default)."""
     log("execute query: \n" + the_query)
     for header in MU_HEADERS:
@@ -129,8 +127,7 @@ def query(the_query):
     sparqlQuery.setQuery(the_query)
     return sparqlQuery.query().convert()
 
-
-def update(the_query):
+def update(the_query: str, request: Request):
     """Execute the given update SPARQL query on the triplestore. If the given query is not an update query, nothing happens."""
     for header in MU_HEADERS:
         if header in request.headers:
@@ -142,8 +139,7 @@ def update(the_query):
     if sparqlUpdate.isSparqlUpdateRequest():
         sparqlUpdate.query()
 
-
-def update_modified(subject, modified=datetime.datetime.now()):
+def update_modified(subject, request: Request, modified=datetime.datetime.now()):
     """(DEPRECATED) Executes a SPARQL query to update the modification date of the given subject URI (string).
      The default date is now."""
     query = " WITH <%s> " % MU_APPLICATION_GRAPH
@@ -153,11 +149,11 @@ def update_modified(subject, modified=datetime.datetime.now()):
     query += " WHERE {"
     query += "   <%s> <%s> %s ." % (subject, DC.Modified, sparql_escape(modified))
     query += " }"
-    update(query)
+    update(query, request)
 
     query = " INSERT DATA {"
     query += "   GRAPH <%s> {" % MU_APPLICATION_GRAPH
     query += "     <%s> <%s> %s ." % (subject, DC.Modified, sparql_escape(modified))
     query += "   }"
     query += " }"
-    update(query)
+    update(query, request)
