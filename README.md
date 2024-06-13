@@ -2,6 +2,9 @@
 
 Template for [mu.semte.ch](http://mu.semte.ch)-microservices written in Python3. Based on the [FastAPI](https://fastapi.tiangolo.com/)-framework.
 
+## Motivation Behind the Fork
+The primary motivation for this fork is the heavy nature of the ML packages (mainly PyTorch and TensorFlow). Reusing this image across different systems can be highly efficient. Additionally, transitioning to FastAPI allows for better handling of concurrency and asynchronous processing of requests, which is crucial for performance and scalability.
+
 ## Quickstart
 
 Create a `Dockerfile` which extends the `svercoutere/mu-python-ml`-image and set a maintainer.
